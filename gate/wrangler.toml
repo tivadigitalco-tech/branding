@@ -1,0 +1,21 @@
+# Brand Studio at tivadigi.com.au/branding, gated by the Tiva HQ login.
+name = "brand-studio-gate"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = false
+preview_urls = false
+routes = [{ pattern = "tivadigi.com.au/branding*", zone_name = "tivadigi.com.au" }]
+
+[assets]
+directory = "../public"
+binding = "ASSETS"
+run_worker_first = true
+
+[vars]
+CLAUDE_MODEL = "claude-opus-5-5"
+MAX_TOKENS = "32000"
+ALLOWED_ORIGINS = "https://tivadigi.com.au"
+HQ_ORIGIN = "https://tivadigi.com.au"
+
+[observability]
+enabled = true

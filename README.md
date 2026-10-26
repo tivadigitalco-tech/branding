@@ -1,4 +1,13 @@
-# Brand Studio: branding.tivadigi.com.au
+# Brand Studio: tivadigi.com.au/branding
+
+Production runs as the Worker in `gate/`, on the route `tivadigi.com.au/branding*`. It lets a request through only when the visitor is signed in to Tiva HQ (tivadigi.com.au): the Worker forwards the visitor's cookies to `https://tivadigi.com.au/` and treats a 2xx answer as signed in. Anyone else is sent to `https://tivadigi.com.au/login?next=/branding/...`. It serves `public/` as static assets and `POST /branding/api/generate` from `functions/api/generate.js`.
+
+### Gate Worker deploy (Workers Builds)
+Workers & Pages > Create > Import a repository > `tivadigitalco-tech/branding`. Root directory `gate`, build command empty, deploy command `npx wrangler deploy`. Then Worker > Settings > Variables and Secrets > add Secret `ANTHROPIC_API_KEY`. CLI equivalent: `cd gate && npx wrangler deploy && npx wrangler secret put ANTHROPIC_API_KEY`.
+
+Change HQ's session check URL with the `HQ_SESSION_CHECK` variable if `/` stops being a cheap signed-in-only page.
+
+The sections below describe the original Cloudflare Pages setup (branding.tivadigi.com.au behind Cloudflare Access), kept as a fallback.
 
 Static page plus one Cloudflare Pages Function.
 
@@ -64,4 +73,4 @@ Open http://localhost:8788. Add `http://localhost:8788` to `ALLOWED_ORIGINS` in 
 - Generate-unavailable warning text now points at the function and secret.
 
 ## Updating the app
-Replace `public/index.html` with a new export, re-insert the shim `<script>` block (marked "Self-hosted runtime") before the first `<script>`, and redeploy.
+Replace `public/index.html` with a new export, re-insert the shim `<script>` block (its fetch URL must stay relative: `api/generate`) (marked "Self-hosted runtime") before the first `<script>`, and redeploy.
