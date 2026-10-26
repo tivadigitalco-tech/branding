@@ -4,6 +4,8 @@ main = "src/index.js"
 compatibility_date = "2026-10-01"
 workers_dev = false
 preview_urls = false
+# Keep variables added in the dashboard (e.g. ANTHROPIC_WORKSPACE_ID) across Git deploys.
+keep_vars = true
 routes = [{ pattern = "tivadigi.com.au/branding*", zone_name = "tivadigi.com.au" }]
 
 [assets]
