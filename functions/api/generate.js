@@ -7,6 +7,7 @@
 //   CLAUDE_MODEL       optional, default claude-opus-5-5
 //   MAX_TOKENS         optional, default 32000
 //   ALLOWED_ORIGINS    optional, comma-separated, default https://branding.tivadigi.com.au
+//   ANTHROPIC_WORKSPACE_ID  optional; required when the key is not scoped to a workspace
 
 const DEFAULT_MODEL = 'claude-opus-5-5';
 const DEFAULT_MAX_TOKENS = 32000;
@@ -37,6 +38,7 @@ export async function onRequestPost({ request, env }) {
       'content-type': 'application/json',
       'x-api-key': env.ANTHROPIC_API_KEY,
       'anthropic-version': '2023-06-01',
+      ...(env.ANTHROPIC_WORKSPACE_ID ? { 'anthropic-workspace-id': env.ANTHROPIC_WORKSPACE_ID } : {}),
     },
     body: JSON.stringify({
       model: env.CLAUDE_MODEL || DEFAULT_MODEL,
