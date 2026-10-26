@@ -257,7 +257,7 @@ pre.prompt{margin:0;font-family:var(--f-mono);font-size:12px;line-height:1.55;wh
   async function run(prompt,opts){
     opts=opts||{};
     let res;
-    try{res=await fetch('/api/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({prompt:String(prompt)}),signal:opts.signal,credentials:'same-origin'})}
+    try{res=await fetch('api/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({prompt:String(prompt)}),signal:opts.signal,credentials:'same-origin'})}
     catch(e){throw fail(e&&e.name==='AbortError'?'cancelled':'network_error')}
     if(!res.ok){let c='';try{c=(await res.json()).error.code}catch(e){}throw fail(c||(res.status===429?'rate_limited':'upstream_error'))}
     const reader=res.body.getReader(),dec=new TextDecoder();let text='';
