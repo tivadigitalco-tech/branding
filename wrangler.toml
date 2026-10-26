@@ -1,0 +1,8 @@
+name = "brand-studio"
+pages_build_output_dir = "public"
+compatibility_date = "2026-10-01"
+
+[vars]
+CLAUDE_MODEL = "claude-opus-5-5"
+MAX_TOKENS = "32000"
+ALLOWED_ORIGINS = "https://branding.tivadigi.com.au"
