@@ -267,7 +267,8 @@ pre.prompt{margin:0;font-family:var(--f-mono);font-size:12px;line-height:1.55;wh
 
 <script>
 /* Self-hosted runtime: stands in for the claude.ai artifact capabilities this page uses.
-   'sample' posts prompts (and optional reference images: opts.images=[{media_type,data}]) to /api/generate.
+   'sample' posts prompts (and optional reference images: opts.images=[{media_type,data}]) to /api/generate
+   and drops the \u0001 keep-alive bytes the proxy sends while the model thinks.
    'downloads' saves files through a normal browser download. */
 (function(){
   if(window.claude&&window.claude.use)return;
@@ -288,7 +289,7 @@ pre.prompt{margin:0;font-family:var(--f-mono);font-size:12px;line-height:1.55;wh
     if(!res.ok){let c='';try{c=(await res.json()).error.code}catch(e){}throw fail(c||(res.status===429?'rate_limited':'upstream_error'))}
     const reader=res.body.getReader(),dec=new TextDecoder();let text='';
     try{
-      for(;;){const {value,done}=await reader.read();if(done)break;text+=dec.decode(value,{stream:true});
+      for(;;){const {value,done}=await reader.read();if(done)break;text+=dec.decode(value,{stream:true}).replace(/\u0001/g,'');
         const m=text.indexOf('\n\u0000ERR:');if(m<0&&opts.onText)opts.onText({text})}
     }catch(e){throw fail(e&&e.name==='AbortError'?'cancelled':'network_error')}
     const m=text.indexOf('\n\u0000ERR:');if(m>=0)throw fail(text.slice(m+6).trim()||'upstream_error');
