@@ -67,6 +67,13 @@ wrangler pages dev public
 ```
 Open http://localhost:8788. Add `http://localhost:8788` to `ALLOWED_ORIGINS` in `.dev.vars` if the origin check blocks it.
 
+## App structure (Oct 2026)
+- Phase 1, Logo: mark style, typography pairing, lockups (horizontal, stacked, icon), variations (colour, reversed, one colour) and construction grid controls. Optional reference sketches (PNG, JPG, WEBP, up to 3, reduced to 1024 px in the browser) go to `/api/generate` as image content. Three directions, then versioned refinements (v1, v2, ...) with live previews. Approve and lock saves the Brand Kit; asset generation stays locked until then.
+- Phase 2, Assets: Signage and vehicle graphics removed. Business card sizes Standard 91 × 55, Square 65 × 65, Slim 85 × 40 mm; letterhead A4 or US Letter; envelope DL. Each print asset has its own print settings (bleed, safe margin, paper, finish, colour, PDF, printer, confirmed-with-printer). Print artwork is generated at 10 units per mm including bleed.
+- Export, all in the browser: clean SVG, transparent PNG (print items 300 dpi), print-ready PDF (lossless artwork at 300 to 600 dpi, TrimBox and BleedBox, optional crop marks and slug), PPTX brand guidelines and client presentation decks (pptxgenjs in `public/vendor/`, cdnjs fallback), logo kit ZIP and a full ZIP.
+
+`/api/generate` body: `{"prompt": "...", "images": [{"media_type": "image/jpeg", "data": "<base64>"}]}`. `images` is optional, at most 4, 5 MB each.
+
 ## Changes from the claude.ai prototype
 - Added doctype, viewport and noindex meta.
 - Inserted a small runtime shim before the app script that provides `window.claude.use('sample')` (calls `/api/generate`, streams progress, parses JSON) and `window.claude.use('downloads')` (normal browser download). App logic is unchanged.

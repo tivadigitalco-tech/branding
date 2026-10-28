@@ -12,6 +12,10 @@
 const DEFAULT_MODEL = 'claude-opus-5-5';
 const DEFAULT_MAX_TOKENS = 32000;
 const MAX_PROMPT_CHARS = 400000;
+// Reference images (logo sketches): base64, at most 4 per request and 5 MB each (the Messages API limit).
+const MAX_IMAGES = 4;
+const MAX_IMAGE_B64 = Math.floor(5 * 1024 * 1024 * 4 / 3);
+const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 
 const SYSTEM = 'You are the generation engine for Brand Studio, a branding production tool. ' +
   'Follow the prompt exactly. When the prompt asks for JSON, reply with one JSON value only: ' +
@@ -31,6 +35,16 @@ export async function onRequestPost({ request, env }) {
   const prompt = typeof body.prompt === 'string' ? body.prompt : '';
   if (!prompt) return err(400, 'bad_request', 'Missing prompt');
   if (prompt.length > MAX_PROMPT_CHARS) return err(413, 'too_large', 'Prompt too long');
+  const images = Array.isArray(body.images) ? body.images : [];
+  if (images.length > MAX_IMAGES) return err(413, 'too_large', 'Too many images');
+  for (const im of images) {
+    if (!im || !IMAGE_TYPES.includes(im.media_type) || typeof im.data !== 'string' || !/^[A-Za-z0-9+/=]+$/.test(im.data))
+      return err(400, 'bad_request', 'Images must be base64 PNG, JPEG, WEBP or GIF');
+    if (im.data.length > MAX_IMAGE_B64) return err(413, 'too_large', 'Image too large');
+  }
+  const content = images.length
+    ? [...images.map(im => ({ type: 'image', source: { type: 'base64', media_type: im.media_type, data: im.data } })), { type: 'text', text: prompt }]
+    : prompt;
 
   const upstream = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -44,7 +58,7 @@ export async function onRequestPost({ request, env }) {
       model: env.CLAUDE_MODEL || DEFAULT_MODEL,
       max_tokens: Number(env.MAX_TOKENS) || DEFAULT_MAX_TOKENS,
       system: SYSTEM,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content }],
       stream: true,
     }),
     signal: request.signal,
