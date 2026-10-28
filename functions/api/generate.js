@@ -16,6 +16,8 @@ const MAX_PROMPT_CHARS = 400000;
 const MAX_IMAGES = 4;
 const MAX_IMAGE_B64 = Math.floor(5 * 1024 * 1024 * 4 / 3);
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+const HEARTBEAT = '\u0001';
+const HEARTBEAT_MS = 10000;
 
 const SYSTEM = 'You are the generation engine for Brand Studio, a branding production tool. ' +
   'Follow the prompt exactly. When the prompt asks for JSON, reply with one JSON value only: ' +
@@ -74,9 +76,15 @@ export async function onRequestPost({ request, env }) {
 
   // Convert the SSE stream into a plain text stream of the reply.
   // A stop_reason of "refusal" or an in-stream error is signalled with a trailing marker line.
+  // While the model thinks it sends no text for a minute or more, and proxies on the way
+  // drop a silent connection, so a \u0001 keep-alive byte goes out after HEARTBEAT_MS of silence.
+  // The page strips these.
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();
   const enc = new TextEncoder();
+  let last = 0;
+  const send = s => { last = Date.now(); return writer.write(enc.encode(s)); };
+  const beat = setInterval(() => { if (Date.now() - last >= HEARTBEAT_MS) send(HEARTBEAT).catch(() => {}); }, 1000);
   (async () => {
     const reader = upstream.body.getReader();
     const dec = new TextDecoder();
@@ -93,18 +101,19 @@ export async function onRequestPost({ request, env }) {
           if (!line) continue;
           let ev; try { ev = JSON.parse(line.slice(5)); } catch { continue; }
           if (ev.type === 'content_block_delta' && ev.delta && ev.delta.type === 'text_delta') {
-            await writer.write(enc.encode(ev.delta.text));
+            await send(ev.delta.text);
           } else if (ev.type === 'message_delta' && ev.delta && ev.delta.stop_reason === 'refusal') {
-            await writer.write(enc.encode('\n\u0000ERR:refused'));
+            await send('\n\u0000ERR:refused');
           } else if (ev.type === 'error') {
             const t = ev.error && ev.error.type;
-            await writer.write(enc.encode('\n\u0000ERR:' + (t === 'overloaded_error' || t === 'rate_limit_error' ? 'rate_limited' : 'upstream_error')));
+            await send('\n\u0000ERR:' + (t === 'overloaded_error' || t === 'rate_limit_error' ? 'rate_limited' : 'upstream_error'));
           }
         }
       }
     } catch (e) {
-      try { await writer.write(enc.encode('\n\u0000ERR:upstream_error')); } catch {}
+      try { await send('\n\u0000ERR:upstream_error'); } catch {}
     } finally {
+      clearInterval(beat);
       try { await writer.close(); } catch {}
     }
   })();
